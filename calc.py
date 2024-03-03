@@ -1,5 +1,4 @@
-﻿"""Pythonで計算REPL"""
-# -*- coding: UTF_8 -*-
+﻿# -*- coding: UTF_8 -*-
 import math
 
 def delempty(l: list) -> list[str]:
@@ -167,5 +166,6 @@ def calculator(s: str) -> None:
     print(anser)
 
 
+print("数式を打ってください。")
 while (a := input()) != "quit":
     calculator(a)
