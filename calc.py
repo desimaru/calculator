@@ -114,7 +114,7 @@ def calc(formula: list[str]) -> float:
             formula[0] = str(float(formula[0]) + float(formula.pop(1)))
         p = float(formula[0])
         return p
-    except (ValueError, TypeError, IndexError, OverflowError):
+    except (ValueError, TypeError, IndexError, OverflowError,ZeroDivisionError):
         print("無効な値です")
         return 0.0
 
