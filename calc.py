@@ -38,7 +38,7 @@ def indexfind(li: list, st) -> int:
     return -1
 
 
-def fact(f: list[str]) -> None:
+def fact(f: list) -> None:
     """渡された配列の!がある1個前の部分を階乗する"""
     while "!" in f:
         index = f.index("!")
@@ -55,7 +55,7 @@ def fact(f: list[str]) -> None:
             f.pop(index)
 
 
-def lpow(l: list[str]) -> None:
+def lpow(l: list) -> None:
     """渡された配列をべき乗する"""
     while "^" in l:
         index = l.index("^")
@@ -63,7 +63,7 @@ def lpow(l: list[str]) -> None:
         l.pop(index)
 
 
-def calc(formula: list[str]) -> float:
+def calc(formula: list) -> float:
     """引数に渡された式を評価する関数
 
     Args:
@@ -82,55 +82,65 @@ def calc(formula: list[str]) -> float:
             3:*、/、%
             4:+、-
     """
-    try:
-        fact(formula)
-        lpow(formula)
-        while "*" in formula or "/" in formula or "%" in formula:
-            index = indexfind(formula, "*")
-            index2 = indexfind(formula, "/")
-            index3 = indexfind(formula, "%")
-            if (
-                (index2 != -1)
-                and (
-                    ((index2 < index) and (index2 < index3))
-                    or ((index == -1) and (index3 == -1))
-                )
-            ):  # (index2が-1ではない)かつ、{(index2がindex1と3未満)または、(index1と3が両方-1の時)}
-                formula[index - 1] = str(
-                    float(formula[index2 - 1]) / float(formula.pop(index2 + 1))
-                )
-                formula.pop(index)
-            elif index != -1 and (index < index3 or index3 == -1):
-                formula[index - 1] = str(
-                    float(formula[index - 1]) * float(formula.pop(index + 1))
-                )
-                formula.pop(index)
-            elif index3 != -1:
-                formula[index3 - 1] = str(
-                    float(formula[index3 - 1]) % float(formula.pop(index3 + 1))
-                )
-                formula.pop(index3)
-        while len(formula) > 1:
-            formula[0] = str(float(formula[0]) + float(formula.pop(1)))
-        p = float(formula[0])
-        return p
-    except (ValueError, TypeError, IndexError, OverflowError,ZeroDivisionError):
-        print("無効な値です")
-        return 0.0
+    while "(" in formula:
+        index=indexfind(formula,"(")
+        index2=indexfind(formula,")")
+        if str(formula[index - 1]).isdecimal():
+            e=calc(formula[index+1:index2])
+            del formula[index+1:index2]
+            delempty(formula)
+            formula[index]=e*float(formula.pop(index-1))
+            formula.pop(index-1)
+        elif str(formula[index + 1]).isdecimal():
+            e=calc(formula[index+1:index2])
+            del formula[index+1:index2]
+            formula[index]=e*float(formula.pop(index + 1))
+        else:
+            formula[index]=calc(formula[index+1:index2])
+        del formula[index+1:index2+1]
+        delempty(formula)
+    fact(formula)
+    lpow(formula)
+    while "*" in formula or "/" in formula or "%" in formula:
+        index = indexfind(formula, "*")
+        index2 = indexfind(formula, "/")
+        index3 = indexfind(formula, "%")
+        if (
+            (index2 != -1)
+            and (
+                ((index2 < index) and (index2 < index3))
+                or ((index == -1) and (index3 == -1))
+            )
+        ):  # (index2が-1ではない)かつ、{(index2がindex1と3未満)または、(index1と3が両方-1の時)}
+            formula[index - 1] = str(
+                float(formula[index2 - 1]) / float(formula.pop(index2 + 1))
+            )
+            formula.pop(index)
+        elif index != -1 and (index < index3 or index3 == -1):
+            formula[index - 1] = str(
+                float(formula[index - 1]) * float(formula.pop(index + 1))
+            )
+            formula.pop(index)
+        elif index3 != -1:
+            formula[index3 - 1] = str(
+                float(formula[index3 - 1]) % float(formula.pop(index3 + 1))
+            )
+            formula.pop(index3)
+    while len(formula) > 1:
+        formula[0] = str(float(formula[0]) + float(formula.pop(1)))
+    p = float(formula[0])
+    return p
 
 
-def calculator(s: str) -> None:
-    """渡された文字列を評価して出力する関数
+def calculator(s: str) -> str:
+    """渡された文字列を評価して返す関数
 
     Args:
         s (str):評価したい文字列
     """
     b = []
-    anser: float = 0.0
     if s == "":
-        print(0)
-        return
-    u = 0
+        return "0"
     minus = False
     for i, j in enumerate(s):
         if j.isdecimal():
@@ -140,9 +150,8 @@ def calculator(s: str) -> None:
                 if minus:
                     b.append(f"-{j}")
                     minus = False
-                    u += 1
                 else:
-                    b[u] += j
+                    b[-1] += j
         else:
             if j == "-":
                 minus = True
@@ -150,22 +159,20 @@ def calculator(s: str) -> None:
                 if j != "+":
                     b.append(j)
                     b.append("")
-                    u += 2
                 elif j not in ("+", "-", "*", "/", "!", "^"):
                     print("無効な値です")
-                    return
+                    return ""
                 else:
                     b.append("")
-                    u += 1
     delempty(b)
-    x = calc(b)
-    if str(x).endswith(".0"):
-        anser = int(x)
-    else:
-        anser = x
-    print(anser)
+    if str(x:=calc(b)).endswith(".0"):
+        return str(int(x))
+    return str(x)
 
 
-print("数式を打ってください。")
+print("数式を打ってください。(quitで終了)")
 while (a := input()) != "quit":
-    calculator(a)
+    try:
+        print(calculator(a))
+    except (ValueError, TypeError, IndexError, OverflowError,ZeroDivisionError):
+        print("無効な値です")
