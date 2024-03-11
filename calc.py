@@ -1,5 +1,9 @@
 ﻿# -*- coding: UTF_8 -*-
-import math
+import math, re
+
+
+pettern = re.compile(r"^(\d|\.|-)+$")
+
 
 def delempty(l: list) -> list[str]:
     """配列の空要素を消す関数
@@ -77,27 +81,80 @@ def calc(formula: list) -> float:
         10
     Note:
         優先順位:
-            1:!
-            2:^
-            3:*、/、%
-            4:+、-
+            1:[]
+            2:{}
+            3:()
+            4:!
+            5:^
+            6:*、/、%
+            7:+、-
     """
-    while "(" in formula:
-        index=indexfind(formula,"(")
-        index2=indexfind(formula,")")
-        if str(formula[index - 1]).isdecimal():
-            e=calc(formula[index+1:index2])
-            del formula[index+1:index2]
+    while "[" in formula:
+        index = indexfind(formula, "[")
+        index2 = indexfind(formula, "]")
+        if (
+            str(formula[index - 1]).count(".") <= 1
+            and str(formula[index - 1]).count("-") <= 1
+            and bool(pettern.match(str(formula[index - 1])))
+        ):
+            e = calc(formula[index + 1 : index2])
+            del formula[index + 1 : index2]
             delempty(formula)
-            formula[index]=e*float(formula.pop(index-1))
-            formula.pop(index-1)
-        elif str(formula[index + 1]).isdecimal():
-            e=calc(formula[index+1:index2])
-            del formula[index+1:index2]
-            formula[index]=e*float(formula.pop(index + 1))
+            formula[index] = e * float(formula.pop(index - 1))
+            formula.pop(index - 1)
+        elif str(formula[index2 + 1]).isdecimal():
+            e = calc(formula[index + 1 : index2])
+            del formula[index + 1 : index2]
+            formula[index] = e * float(formula.pop(index2 + 1))
         else:
-            formula[index]=calc(formula[index+1:index2])
-        del formula[index+1:index2+1]
+            formula[index] = calc(formula[index + 1 : index2])
+        del formula[index + 1 : index2 + 1]
+        delempty(formula)
+    while "{" in formula:
+        index = indexfind(formula, "{")
+        index2 = indexfind(formula, "}")
+        if (
+            str(formula[index - 1]).count(".") <= 1
+            and str(formula[index - 1]).count("-") <= 1
+            and bool(pettern.match(str(formula[index - 1])))
+        ):
+            e = calc(formula[index + 1 : index2])
+            del formula[index + 1 : index2]
+            delempty(formula)
+            formula[index] = e * float(formula.pop(index - 1))
+            formula.pop(index - 1)
+        elif str(formula[index2 + 1]).isdecimal():
+            e = calc(formula[index + 1 : index2])
+            del formula[index + 1 : index2]
+            formula[index] = e * float(formula.pop(index2 + 1))
+        else:
+            formula[index] = calc(formula[index + 1 : index2])
+        del formula[index + 1 : index2 + 1]
+        delempty(formula)
+    while "(" in formula:
+        index = indexfind(formula, "(")
+        index2 = indexfind(formula, ")")
+        if (
+            str(formula[index - 1]).count(".") <= 1
+            and str(formula[index - 1]).count("-") <= 1
+            and bool(pettern.match(str(formula[index - 1])))
+        ):
+            e = calc(formula[index + 1 : index2])
+            del formula[index + 1 : index2]
+            delempty(formula)
+            formula[index] = e * float(formula.pop(index - 1))
+            formula.pop(index - 1)
+        elif len(formula) - 1 != index2 and (
+            str(formula[index - 1]).count(".") <= 1
+            and str(formula[index - 1]).count("-") <= 1
+            and bool(pettern.match(str(formula[index - 1])))
+        ):
+            e = calc(formula[index + 1 : index2])
+            del formula[index + 1 : index2]
+            formula[index] = e * float(formula.pop(index2 + 1))
+        else:
+            formula[index] = calc(formula[index + 1 : index2])
+        del formula[index + 1 : index2 + 1]
         delempty(formula)
     fact(formula)
     lpow(formula)
@@ -132,40 +189,43 @@ def calc(formula: list) -> float:
     return p
 
 
+def mathsplit(s: str = "", c: bool = False) -> list:
+    """渡された文字列を演算子と数字で分けて返す関数"""
+    b = []
+    for i, j in enumerate(s):
+        if j.isdecimal():
+            if i == 0:
+                b.append(j)
+            else:
+                b[-1] += j
+        else:
+            if j == ".":
+                b[-1] += "."
+            elif j == "+" or j == "-":
+                if c:
+                    b.append("-" if j == "-" else "")
+                else:
+                    b.append(j)
+                    b.append("")
+            elif j in ("*", "/", "!", "^", "(", ")", "{", "}", "[", "]"):
+                b.append(j)
+                b.append("")
+            else:
+                raise ValueError("無効な演算子")
+    return b
+
+
 def calculator(s: str) -> str:
     """渡された文字列を評価して返す関数
 
     Args:
         s (str):評価したい文字列
     """
-    b = []
     if s == "":
         return "0"
-    minus = False
-    for i, j in enumerate(s):
-        if j.isdecimal():
-            if i == 0:
-                b.append(j)
-            else:
-                if minus:
-                    b.append(f"-{j}")
-                    minus = False
-                else:
-                    b[-1] += j
-        else:
-            if j == "-":
-                minus = True
-            else:
-                if j != "+":
-                    b.append(j)
-                    b.append("")
-                elif j not in ("+", "-", "*", "/", "!", "^"):
-                    print("無効な値です")
-                    return ""
-                else:
-                    b.append("")
-    delempty(b)
-    if str(x:=calc(b)).endswith(".0"):
+    c = mathsplit(s, True)
+    delempty(c)
+    if str(x := calc(c)).endswith(".0"):
         return str(int(x))
     return str(x)
 
@@ -174,5 +234,5 @@ print("数式を打ってください。(quitで終了)")
 while (a := input()) != "quit":
     try:
         print(calculator(a))
-    except (ValueError, TypeError, IndexError, OverflowError,ZeroDivisionError):
+    except (ValueError, TypeError, IndexError, OverflowError, ZeroDivisionError):
         print("無効な値です")
