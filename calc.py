@@ -1,7 +1,7 @@
 ﻿# -*- coding: UTF_8 -*-
 import math, re
 
-10
+
 pettern = re.compile(r"^(\d|\.|-)+$")
 
 
