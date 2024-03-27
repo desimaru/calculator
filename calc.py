@@ -1,4 +1,4 @@
-﻿# -*- coding: UTF_8 -*-
+# -*- coding: UTF_8 -*-
 from math import factorial
 from re import compile as rcompile
 
