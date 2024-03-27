@@ -1,34 +1,32 @@
-﻿# -*- coding: UTF_8 -*-
-import math, re
+# -*- coding: UTF_8 -*-
+from math import factorial
+from re import compile as rcompile
 
 
-pettern = re.compile(r"^(\d|\.|-)+$")
-
-
-def delempty(l: list) -> list[str]:
+def delempty(array: list) -> list[str]:
     """配列の空要素を消す関数
 
     Args:
-        l (list): 空要素を消したい配列
+        lis (list[Any]): 空要素を消したい配列
 
     Returns:
         list[Any]: 空要素が消えた配列
     Note:
         元の配列の空要素も消える
     """
-    while "" in l:
-        l.remove("")
-    return l
+    while "" in array:
+        array.remove("")
+    return array
 
 
-def indexfind(li: list, st) -> int:
+def indexfind(li: list, felem) -> int:
     """要素の位置を返す関数
 
     任意の要素が配列に含まれていない場合に-1を返す関数
 
     Args:
         li (list):探したい配列
-        st (any):探したい要素
+        felem (any):探したい要素
     Returns:
         int: 要素の位置 無い場合は-1を返す
     Examples:
@@ -37,8 +35,8 @@ def indexfind(li: list, st) -> int:
         >>>indexfind(["hoge","huga"],"foo")
         -1
     """
-    if st in li:
-        return li.index(st)
+    if felem in li:
+        return li.index(felem)
     return -1
 
 
@@ -50,21 +48,47 @@ def fact(f: list) -> None:
             # 自然数ではない場合
             if int(f[index - 1]) < 0:
                 # 負の数の場合
-                f[index - 1] = f"-{math.factorial(abs(int(f[index-1])))}"
+                f[index - 1] = f"-{factorial(abs(int(f[index-1])))}"
                 # 絶対値の階乗のマイナス
                 f.pop(index)
         else:
             # 普通の階乗
-            f[index - 1] = str(math.factorial(int(f[index - 1])))
+            f[index - 1] = str(factorial(int(f[index - 1])))
             f.pop(index)
 
 
-def lpow(l: list) -> None:
+def lpow(formula: list) -> None:
     """渡された配列をべき乗する"""
-    while "^" in l:
-        index = l.index("^")
-        l[index - 1] = str(float(l[index - 1]) ** float(l.pop(index + 1)))
-        l.pop(index)
+    while "^" in formula:
+        index = formula.index("^")
+        formula[index - 1] = str(
+            float(formula[index - 1]) ** float(formula.pop(index + 1))
+        )
+        formula.pop(index)
+
+
+pettern = rcompile(r"^-?\d+\.?\d*?$")
+
+
+def brackets(formula: list, bracket: str) -> list:
+    """配列の括弧を探して計算する関数"""
+    while bracket[0] in formula:
+        index = indexfind(formula, bracket[0])
+        index2 = indexfind(formula, bracket[1])
+        if index != 0 and bool(pettern.match(str(formula[index - 1]))):
+            e = calc(formula[index + 1:index2])
+            del formula[index + 1:index2]
+            formula[index] = e * float(formula.pop(index - 1))
+            formula.pop(index - 1)
+        elif (len(formula) != index2 and
+                pettern.match(str(formula[index2 + 1]))):
+            e = calc(formula[index + 1:index2])
+            del formula[index + 1:index2]
+            formula[index] = e * float(formula.pop(index2 + 1))
+        else:
+            formula[index] = calc(formula[index + 1:index2])
+            del formula[index + 1:index2 + 1]
+    return formula
 
 
 def calc(formula: list) -> float:
@@ -89,85 +113,18 @@ def calc(formula: list) -> float:
             6:*、/、%
             7:+、-
     """
-    while "[" in formula:
-        index = indexfind(formula, "[")
-        index2 = indexfind(formula, "]")
-        if (
-            str(formula[index - 1]).count(".") <= 1
-            and str(formula[index - 1]).count("-") <= 1
-            and bool(pettern.match(str(formula[index - 1])))
-        ):
-            e = calc(formula[index + 1 : index2])
-            del formula[index + 1 : index2]
-            delempty(formula)
-            formula[index] = e * float(formula.pop(index - 1))
-            formula.pop(index - 1)
-        elif str(formula[index2 + 1]).isdecimal():
-            e = calc(formula[index + 1 : index2])
-            del formula[index + 1 : index2]
-            formula[index] = e * float(formula.pop(index2 + 1))
-        else:
-            formula[index] = calc(formula[index + 1 : index2])
-        del formula[index + 1 : index2 + 1]
-        delempty(formula)
-    while "{" in formula:
-        index = indexfind(formula, "{")
-        index2 = indexfind(formula, "}")
-        if (
-            str(formula[index - 1]).count(".") <= 1
-            and str(formula[index - 1]).count("-") <= 1
-            and bool(pettern.match(str(formula[index - 1])))
-        ):
-            e = calc(formula[index + 1 : index2])
-            del formula[index + 1 : index2]
-            delempty(formula)
-            formula[index] = e * float(formula.pop(index - 1))
-            formula.pop(index - 1)
-        elif str(formula[index2 + 1]).isdecimal():
-            e = calc(formula[index + 1 : index2])
-            del formula[index + 1 : index2]
-            formula[index] = e * float(formula.pop(index2 + 1))
-        else:
-            formula[index] = calc(formula[index + 1 : index2])
-        del formula[index + 1 : index2 + 1]
-        delempty(formula)
-    while "(" in formula:
-        index = indexfind(formula, "(")
-        index2 = indexfind(formula, ")")
-        if (
-            str(formula[index - 1]).count(".") <= 1
-            and str(formula[index - 1]).count("-") <= 1
-            and bool(pettern.match(str(formula[index - 1])))
-        ):
-            e = calc(formula[index + 1 : index2])
-            del formula[index + 1 : index2]
-            delempty(formula)
-            formula[index] = e * float(formula.pop(index - 1))
-            formula.pop(index - 1)
-        elif len(formula) - 1 != index2 and (
-            str(formula[index - 1]).count(".") <= 1
-            and str(formula[index - 1]).count("-") <= 1
-            and bool(pettern.match(str(formula[index - 1])))
-        ):
-            e = calc(formula[index + 1 : index2])
-            del formula[index + 1 : index2]
-            formula[index] = e * float(formula.pop(index2 + 1))
-        else:
-            formula[index] = calc(formula[index + 1 : index2])
-        del formula[index + 1 : index2 + 1]
-        delempty(formula)
+    brackets(formula, "[]")
+    brackets(formula, "{}")
+    brackets(formula, "()")
     fact(formula)
     lpow(formula)
     while "*" in formula or "/" in formula or "%" in formula:
         index = indexfind(formula, "*")
         index2 = indexfind(formula, "/")
         index3 = indexfind(formula, "%")
-        if (
-            (index2 != -1)
-            and (
-                ((index2 < index) and (index2 < index3))
-                or ((index == -1) and (index3 == -1))
-            )
+        if (index2 != -1) and (
+            (index2 < index and index2 < index3) or (
+                index == -1 and index3 == -1)
         ):  # (index2が-1ではない)かつ、{(index2がindex1と3未満)または、(index1と3が両方-1の時)}
             formula[index - 1] = str(
                 float(formula[index2 - 1]) / float(formula.pop(index2 + 1))
@@ -185,30 +142,29 @@ def calc(formula: list) -> float:
             formula.pop(index3)
     while len(formula) > 1:
         formula[0] = str(float(formula[0]) + float(formula.pop(1)))
-    p = float(formula[0])
-    return p
+    return float(formula[0])
 
 
 def mathsplit(s: str = "", c: bool = False) -> list:
     """渡された文字列を演算子と数字で分けて返す関数"""
-    b = []
-    for i, j in enumerate(s):
-        if j.isdecimal():
+    b: list = []
+    for i in s:
+        if len(b) == 0:
             if i == 0:
-                b.append(j)
+                b.append(i)
             else:
-                b[-1] += j
+                b[-1] += i
         else:
-            if j == ".":
+            if i == ".":
                 b[-1] += "."
-            elif j == "+" or j == "-":
+            elif i in ("+", "-"):
                 if c:
-                    b.append("-" if j == "-" else "")
+                    b.append("-" if i == "-" else "")
                 else:
-                    b.append(j)
+                    b.append(i)
                     b.append("")
-            elif j in ("*", "/", "!", "^", "(", ")", "{", "}", "[", "]"):
-                b.append(j)
+            elif i in ("*", "/", "!", "^", "(", ")", "{", "}", "[", "]"):
+                b.append(i)
                 b.append("")
             else:
                 raise ValueError("無効な演算子")
@@ -234,5 +190,5 @@ print("数式を打ってください。(quitで終了)")
 while (a := input()) != "quit":
     try:
         print(calculator(a))
-    except (ValueError, TypeError, IndexError, OverflowError, ZeroDivisionError):
+    except (ValueError, IndexError, OverflowError, ZeroDivisionError):
         print("無効な値です")
