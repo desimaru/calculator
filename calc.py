@@ -1,5 +1,4 @@
 ﻿#!/usr/bin/env python
-# -*- coding: UTF_8 -*-
 from math import factorial
 from re import compile as rcompile
 
