@@ -1,9 +1,9 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python3
 from math import factorial
 from re import compile as rcompile
 
 
-def del_empty(array: list):
+def del_empty(array: list) -> list:
     """配列の空要素を消す関数
 
     Args:
@@ -14,9 +14,10 @@ def del_empty(array: list):
     """
     while "" in array:
         array.remove("")
+    return array
 
 
-def indef_of(array: list, element) -> int:
+def index_of(array: list, element) -> int:
     """要素の位置を返す関数
 
     任意の要素が配列に含まれていない場合に-1を返す関数
@@ -32,44 +33,35 @@ def indef_of(array: list, element) -> int:
     return -1
 
 
-pettern = rcompile(r"^-?\d+\.?\d*?$")
+number = rcompile(r"^-?\d+\.?\d*?$")
 
 
-def brackets(formula: list, bracket: str) -> list:
+def brackets(formula: list, bracket: str, result_type) -> list:
     """配列の括弧を探して計算する関数"""
     while bracket[0] in formula:
-        left_bracket = indef_of(formula, bracket[0])
-        right_bracket = indef_of(formula, bracket[1])
-        if (
-            left_bracket != 0 and bool(
-                pettern.match(str(formula[left_bracket - 1]))
-            )
-        ):
-            in_bracket = calc(formula[left_bracket + 1: right_bracket])
-            del formula[left_bracket + 1: right_bracket]
-            formula[left_bracket] = (
-                in_bracket * float(formula.pop(left_bracket - 1))
+        left_bracket = index_of(formula, bracket[0])
+        right_bracket = index_of(formula, bracket[1])
+        if left_bracket != 0 and bool(number.match(str(formula[left_bracket - 1]))):
+            in_bracket = calc(formula[left_bracket + 1 : right_bracket])
+            del formula[left_bracket + 1 : right_bracket]
+            formula[left_bracket] = in_bracket * result_type(
+                formula.pop(left_bracket - 1)
             )
             formula.pop(left_bracket - 1)
         elif left_bracket != 0 and formula[left_bracket - 1] == "-":
-            in_bracket = calc(formula[left_bracket + 1: right_bracket])
-            del formula[left_bracket + 1: right_bracket]
+            in_bracket = calc(formula[left_bracket + 1 : right_bracket])
+            del formula[left_bracket + 1 : right_bracket]
             formula[left_bracket] = in_bracket * -1
-            formula.pop(left_bracket - 1)
-        elif (
-            len(formula)-1 != right_bracket and
-            pettern.match(str(formula[right_bracket + 1]))
+            formula.pop(left_bracxket - 1)
+        elif len(formula) - 1 != right_bracket and number.match(
+            str(formula[right_bracket + 1])
         ):
-            in_bracket = calc(formula[left_bracket + 1: right_bracket])
-            del formula[left_bracket + 1: right_bracket]
-            formula[left_bracket] = (
-                in_bracket * float(formula.pop(right_bracket + 1))
-            )
+            in_bracket = calc(formula[left_bracket + 1 : right_bracket])
+            del formula[left_bracket + 1 : right_bracket]
+            formula[left_bracket] = in_bracket * float(formula.pop(right_bracket + 1))
         else:
-            formula[left_bracket] = calc(
-                formula[left_bracket + 1: right_bracket]
-            )
-            del formula[left_bracket + 1: right_bracket + 1]
+            formula[left_bracket] = calc(formula[left_bracket + 1 : right_bracket])
+            del formula[left_bracket + 1 : right_bracket + 1]
     return formula
 
 
@@ -90,9 +82,13 @@ def calc(formula: list) -> float:
             6:*、/、%
             7:+、-
     """
-    brackets(formula, "[]")
-    brackets(formula, "{}")
-    brackets(formula, "()")
+    # formulaに小数点とスラッシュが含まれていない場合は計算結果を整数にする
+    result_type = (
+        int if all([not "." in i for i in formula]) and not "/" in formula else float
+    )
+    brackets(formula, "[]", result_type)
+    brackets(formula, "{}", result_type)
+    brackets(formula, "()", result_type)
     while "!" in formula:
         exclamation = formula.index("!")
         if not str(formula[exclamation - 1]).isdecimal():
@@ -106,22 +102,21 @@ def calc(formula: list) -> float:
                 formula.pop(exclamation)
         else:
             # 普通の階乗
-            formula[exclamation -
-                    1] = str(factorial(int(formula[exclamation - 1])))
+            formula[exclamation - 1] = str(factorial(int(formula[exclamation - 1])))
             formula.pop(exclamation)
     while "^" in formula:
         hat = formula.index("^")
         formula[hat - 1] = str(
-            float(formula[hat - 1]) ** float(formula.pop(hat + 1))
+            result_type(formula[hat - 1]) ** result_type(formula.pop(hat + 1))
         )
         formula.pop(hat)
     while "*" in formula or "/" in formula or "%" in formula:
-        asterisk = indef_of(formula, "*")
-        slash = indef_of(formula, "/")
-        percent = indef_of(formula, "%")
-        if (slash != -1) and (
-            (slash < asterisk or asterisk == -1) and
-            (slash < percent or percent == -1)
+        asterisk = index_of(formula, "*")
+        slash = index_of(formula, "/")
+        percent = index_of(formula, "%")
+        # 最初の演算子が/の時
+        if slash != -1 and (
+            (slash < asterisk or asterisk == -1) and (slash < percent or percent == -1)
         ):
             formula[slash - 1] = str(
                 float(formula[slash - 1]) / float(formula.pop(slash + 1))
@@ -129,17 +124,19 @@ def calc(formula: list) -> float:
             formula.pop(slash)
         elif asterisk != -1 and (asterisk < percent or percent == -1):
             formula[asterisk - 1] = str(
-                float(formula[asterisk - 1]) * float(formula.pop(asterisk + 1))
+                result_type(formula[asterisk - 1])
+                * result_type(formula.pop(asterisk + 1))
             )
             formula.pop(asterisk)
         elif percent != -1:
             formula[percent - 1] = str(
-                float(formula[percent - 1]) % float(formula.pop(percent + 1))
+                result_type(formula[percent - 1])
+                % result_type(formula.pop(percent + 1))
             )
             formula.pop(percent)
     while len(formula) > 1:
-        formula[0] = str(float(formula[0]) + float(formula.pop(1)))
-    return float(formula[0])
+        formula[0] = str(result_type(formula[0]) + result_type(formula.pop(1)))
+    return result_type(formula[0])
 
 
 def calculator(str_formula: str) -> str:
@@ -148,33 +145,26 @@ def calculator(str_formula: str) -> str:
     Args:
         str_formula (str):評価したい文字列
     """
-    # 引数が空文字列の場合に"0"を返す
     if str_formula == "":
         return "0"
-    array_formula: list = []
-    # 項ごとに分ける
-    for char in str_formula:
-        if char.isdecimal() or char == ".":
-            if len(array_formula) == 0:
-                array_formula.append(char)
-            else:
-                array_formula[-1] += char
-        else:
-            if char == "+":
-                array_formula.append("")
-            elif char == "-":
-                array_formula.append("-")
-            elif char in (
-                "*", "/", "%", "!", "^", "(", ")", "{", "}", "[", "]"
-            ):
-                if len(array_formula) != 0 and array_formula[-1] == "-":
-                    array_formula[-1] += "1"
-                array_formula.append(char)
-                array_formula.append("")
-            else:
-                raise ValueError()
-    del_empty(array_formula)
-    if str(x := calc(array_formula)).endswith(".0"):
+    # 文字列を数字と演算子で分ける
+    if str(
+        x := calc(
+            del_empty(
+                str_formula.replace("-", "+-")
+                .replace("*", "+*+")
+                .replace("/", "+/+")
+                .replace("^", "+^+")
+                .replace("!", "+!+")
+                .replace("(", "+(+")
+                .replace(")", "+)+")
+                .replace("{", "+{+")
+                .replace("}", "+}+")
+                .replace("[", "+[+")
+                .split("+")
+            )
+        )
+    ).endswith(".0"):
         return str(int(x))
     return str(x)
 
