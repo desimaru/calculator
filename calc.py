@@ -12,9 +12,7 @@ def del_empty(array: list) -> list:
     Returns:
         list[Any]: 空要素が消えた配列
     """
-    while "" in array:
-        array.remove("")
-    return array
+    return [i for i in array if i != ""]
 
 
 def index_of(array: list, element) -> int:
@@ -33,35 +31,16 @@ def index_of(array: list, element) -> int:
     return -1
 
 
-number = rcompile(r"^-?\d+\.?\d*?$")
+number_bracket = rcompile(r"(\d+)(\(|\{|\[)")
 
 
-def brackets(formula: list, bracket: str, result_type) -> list:
+def brackets(formula: list, bracket: str) -> list:
     """配列の括弧を探して計算する関数"""
     while bracket[0] in formula:
         left_bracket = index_of(formula, bracket[0])
         right_bracket = index_of(formula, bracket[1])
-        if left_bracket != 0 and bool(number.match(str(formula[left_bracket - 1]))):
-            in_bracket = calc(formula[left_bracket + 1 : right_bracket])
-            del formula[left_bracket + 1 : right_bracket]
-            formula[left_bracket] = in_bracket * result_type(
-                formula.pop(left_bracket - 1)
-            )
-            formula.pop(left_bracket - 1)
-        elif left_bracket != 0 and formula[left_bracket - 1] == "-":
-            in_bracket = calc(formula[left_bracket + 1 : right_bracket])
-            del formula[left_bracket + 1 : right_bracket]
-            formula[left_bracket] = in_bracket * -1
-            formula.pop(left_bracxket - 1)
-        elif len(formula) - 1 != right_bracket and number.match(
-            str(formula[right_bracket + 1])
-        ):
-            in_bracket = calc(formula[left_bracket + 1 : right_bracket])
-            del formula[left_bracket + 1 : right_bracket]
-            formula[left_bracket] = in_bracket * float(formula.pop(right_bracket + 1))
-        else:
-            formula[left_bracket] = calc(formula[left_bracket + 1 : right_bracket])
-            del formula[left_bracket + 1 : right_bracket + 1]
+        formula[left_bracket] = calc(formula[left_bracket + 1: right_bracket])
+        del formula[left_bracket + 1: right_bracket + 1]
     return formula
 
 
@@ -83,12 +62,12 @@ def calc(formula: list) -> float:
             7:+、-
     """
     # formulaに小数点とスラッシュが含まれていない場合は計算結果を整数にする
-    result_type = (
-        int if all([not "." in i for i in formula]) and not "/" in formula else float
-    )
-    brackets(formula, "[]", result_type)
-    brackets(formula, "{}", result_type)
-    brackets(formula, "()", result_type)
+    result_type = int if (
+        all("." not in i for i in formula) and "/" not in formula
+    ) else float
+    brackets(formula, "[]")
+    brackets(formula, "{}")
+    brackets(formula, "()")
     while "!" in formula:
         exclamation = formula.index("!")
         if not str(formula[exclamation - 1]).isdecimal():
@@ -102,7 +81,9 @@ def calc(formula: list) -> float:
                 formula.pop(exclamation)
         else:
             # 普通の階乗
-            formula[exclamation - 1] = str(factorial(int(formula[exclamation - 1])))
+            formula[exclamation - 1] = str(
+                factorial(int(formula[exclamation - 1]))
+            )
             formula.pop(exclamation)
     while "^" in formula:
         hat = formula.index("^")
@@ -115,8 +96,9 @@ def calc(formula: list) -> float:
         slash = index_of(formula, "/")
         percent = index_of(formula, "%")
         # 最初の演算子が/の時
-        if slash != -1 and (
-            (slash < asterisk or asterisk == -1) and (slash < percent or percent == -1)
+        if slash != -1 and ((slash < asterisk or asterisk == -1) and (
+            slash < percent or percent == -1
+        )
         ):
             formula[slash - 1] = str(
                 float(formula[slash - 1]) / float(formula.pop(slash + 1))
@@ -124,14 +106,16 @@ def calc(formula: list) -> float:
             formula.pop(slash)
         elif asterisk != -1 and (asterisk < percent or percent == -1):
             formula[asterisk - 1] = str(
-                result_type(formula[asterisk - 1])
-                * result_type(formula.pop(asterisk + 1))
+                result_type(formula[asterisk - 1]) * (
+                    result_type(formula.pop(asterisk + 1))
+                )
             )
             formula.pop(asterisk)
         elif percent != -1:
             formula[percent - 1] = str(
-                result_type(formula[percent - 1])
-                % result_type(formula.pop(percent + 1))
+                result_type(formula[percent - 1]) % (
+                    result_type(formula.pop(percent + 1))
+                )
             )
             formula.pop(percent)
     while len(formula) > 1:
@@ -148,10 +132,13 @@ def calculator(str_formula: str) -> str:
     if str_formula == "":
         return "0"
     # 文字列を数字と演算子で分ける
+    if "(" in str_formula or "{" in str_formula or "[" in str_formula:
+        str_formula = number_bracket.sub(r"\1*\2", str_formula)
     if str(
         x := calc(
             del_empty(
-                str_formula.replace("-", "+-")
+                str_formula.replace(" ", "")
+                .replace("-", "+-")
                 .replace("*", "+*+")
                 .replace("/", "+/+")
                 .replace("^", "+^+")
