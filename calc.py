@@ -32,6 +32,7 @@ def index_of(array: list, element) -> int:
 
 
 number_bracket = rcompile(r"(\d+)(\(|\{|\[)")
+parse = rcompile(r"(\*|/|%|\^|!|\(|\)|\{|\}|\[|\])")
 
 
 def brackets(formula: list, bracket: str) -> list:
@@ -137,18 +138,10 @@ def calculator(str_formula: str) -> str:
     if str(
         x := calc(
             del_empty(
-                str_formula.replace(" ", "")
-                .replace("-", "+-")
-                .replace("*", "+*+")
-                .replace("/", "+/+")
-                .replace("^", "+^+")
-                .replace("!", "+!+")
-                .replace("(", "+(+")
-                .replace(")", "+)+")
-                .replace("{", "+{+")
-                .replace("}", "+}+")
-                .replace("[", "+[+")
-                .split("+")
+                parse.sub(
+                    r"+\1+",
+                    str_formula.replace(" ", "").replace("-", "+-")
+                ).split("+")
             )
         )
     ).endswith(".0"):
