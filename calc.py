@@ -64,7 +64,7 @@ def calc(formula: list) -> float:
     """
     # formulaに小数点とスラッシュが含まれていない場合は計算結果を整数にする
     result_type = int if (
-        all("." not in i for i in formula) and "/" not in formula
+        all("." not in str(i) for i in formula) and "/" not in formula
     ) else float
     brackets(formula, "[]")
     brackets(formula, "{}")
@@ -76,7 +76,7 @@ def calc(formula: list) -> float:
             if int(formula[exclamation - 1]) < 0:
                 # 負の数の場合
                 formula[exclamation - 1] = (
-                    f"-{factorial(abs(int(formula[exclamation-1])))}"
+                    -factorial(abs(int(formula[exclamation-1])))
                 )
                 # 絶対値の階乗のマイナス
                 formula.pop(exclamation)
@@ -88,8 +88,8 @@ def calc(formula: list) -> float:
             formula.pop(exclamation)
     while "^" in formula:
         hat = formula.index("^")
-        formula[hat - 1] = str(
-            result_type(formula[hat - 1]) ** result_type(formula.pop(hat + 1))
+        formula[hat - 1] = result_type(formula[hat - 1]) ** result_type(
+            formula.pop(hat + 1)
         )
         formula.pop(hat)
     while "*" in formula or "/" in formula or "%" in formula:
@@ -106,22 +106,16 @@ def calc(formula: list) -> float:
             )
             formula.pop(slash)
         elif asterisk != -1 and (asterisk < percent or percent == -1):
-            formula[asterisk - 1] = str(
-                result_type(formula[asterisk - 1]) * (
-                    result_type(formula.pop(asterisk + 1))
-                )
+            formula[asterisk - 1] = result_type(formula[asterisk - 1]) * (
+                result_type(formula.pop(asterisk + 1))
             )
             formula.pop(asterisk)
         elif percent != -1:
-            formula[percent - 1] = str(
-                result_type(formula[percent - 1]) % (
-                    result_type(formula.pop(percent + 1))
-                )
+            formula[percent - 1] = result_type(formula[percent - 1]) % (
+                result_type(formula.pop(percent + 1))
             )
             formula.pop(percent)
-    while len(formula) > 1:
-        formula[0] = str(result_type(formula[0]) + result_type(formula.pop(1)))
-    return result_type(formula[0])
+    return result_type(sum(result_type(i) for i in formula))
 
 
 def calculator(str_formula: str) -> str:
