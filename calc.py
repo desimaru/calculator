@@ -5,47 +5,19 @@ from typing import Any
 
 
 def del_empty(array: list[str]) -> list[str]:
-    """配列の空要素を消す関数
-
-    Args:
-        array (list[str]): 空要素を消したい配列
-
-    Returns:
-        list[str]: 空要素が消えた配列
-    """
+    """配列の空要素を消す関数"""
     return [i for i in array if i]
 
 
 def index_of(array: list[Any], element: Any) -> int:
-    """要素の位置を返す関数
-
-    任意の要素が配列に含まれていない場合に-1を返す関数
-
-    Args:
-        array (list):探したい配列
-        element (any):探したい要素
-    Returns:
-        int: 要素の位置 無い場合は-1を返す
-    """
+    """要素の位置を返す関数"""
     if element in array:
         return array.index(element)
     return -1
 
 
-number_bracket = re_compile(r"(\d+)([\(\{\[])")
+number_bracket = re_compile(r"(\d+|\))(\()")
 parse = re_compile(r"([\*/%\^!\(\)\{\}\[\]])")
-
-
-def brackets(formula: list[str], bracket: str) -> list[Any]:
-    """配列の括弧を探して計算する関数"""
-    while bracket[0] in formula:
-        left_bracket = index_of(formula, bracket[0])
-        right_bracket = index_of(formula, bracket[1])
-        formula[left_bracket] = str(
-            calc(formula[left_bracket + 1: right_bracket])
-        )
-        del formula[left_bracket + 1: right_bracket + 1]
-    return formula
 
 
 def calc(formula: list[str]) -> float:
@@ -57,21 +29,35 @@ def calc(formula: list[str]) -> float:
         float:計算結果
     Note:
         優先順位:
-            1: []
-            2: {}
-            3: ()
-            4: !
-            5: ^
-            6: *、/、%
-            7: +、-
+            1: ()
+            2: !
+            3: ^
+            4: *、/、%
+            5: +、-
     """
     # formulaに小数点とスラッシュが含まれていない場合は計算結果を整数にする
     result_type = float if (
-        "." in "".join(formula) or "/" in "".join(formula)
+        "." in "".join(formula) or "/" in formula
     ) else int
-    brackets(formula, "[]")
-    brackets(formula, "{}")
-    brackets(formula, "()")
+    while "(" in formula:
+        left_bracket = 0
+        depth = 0
+        for i, j in enumerate(formula):
+            if j == "(":
+                if depth == 0:
+                    left_bracket = i
+                depth += 1
+            elif j == ")":
+                if depth == 1:
+                    formula[left_bracket] = str(
+                        calc(formula[left_bracket + 1: i])
+                    )
+                    del formula[left_bracket + 1: i + 1]
+                    if formula[left_bracket - 1] == "-":
+                        formula[left_bracket - 1] = str(
+                            -result_type(formula.pop(left_bracket))
+                        )
+                depth -= 1
     while "!" in formula:
         exclamation = formula.index("!")
         if not str(formula[exclamation - 1]).isdecimal() and (
@@ -140,7 +126,8 @@ def calculator(str_formula: str) -> str:
             del_empty(
                 parse.sub(
                     r"+\1+",
-                    str_formula.replace(" ", "").replace("-", "+-")
+                    str_formula.replace(" ", "")
+                    .replace("-", "+-")
                 ).split("+")
             )
         )
